@@ -351,7 +351,7 @@ BuildGenericHob (
   VOID
   )
 {
-  UINT32                       RegEax;
+  //UINT32                       RegEax;
   UINT8                        PhysicalAddressBits;
   EFI_RESOURCE_ATTRIBUTE_TYPE  ResourceAttribute;
 
@@ -361,13 +361,15 @@ BuildGenericHob (
   //
   // Build CPU memory space and IO space hob
   //
-  AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
-  if (RegEax >= 0x80000008) {
-    AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
-    PhysicalAddressBits = (UINT8)RegEax;
-  } else {
-    PhysicalAddressBits = 36;
-  }
+  // AsmCpuid (0x80000000, &RegEax, NULL, NULL, NULL);
+  // if (RegEax >= 0x80000008) {
+  //   AsmCpuid (0x80000008, &RegEax, NULL, NULL, NULL);
+  //   PhysicalAddressBits = (UINT8)RegEax;
+  // } else {
+  //   PhysicalAddressBits = 36;
+  // }
+
+  PhysicalAddressBits = 48;
 
   BuildCpuHob (PhysicalAddressBits, 16);
 
@@ -410,7 +412,7 @@ _ModuleEntryPoint (
   ASSERT_EFI_ERROR (Status);
 
   // Initialize floating point operating environment to be compliant with UEFI spec.
-  InitializeFloatingPointUnits ();
+  //InitializeFloatingPointUnits ();
 
   // HOB region is used for HOB and memory allocation for this module
   MemBase    = PcdGet32 (PcdPayloadFdMemBase);

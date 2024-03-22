@@ -13,7 +13,6 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Library/MemoryAllocationLib.h>
 #include <Library/PcdLib.h>
 #include <Library/HobLib.h>
-#include "X64/VirtualMemory.h"
 #include "UefiPayloadEntry.h"
 #define STACK_SIZE  0x20000
 
@@ -43,10 +42,10 @@ HandOffToDxeCore (
   //
   // Clear page 0 and mark it as allocated if NULL pointer detection is enabled.
   //
-  if (IsNullDetectionEnabled ()) {
-    ClearFirst4KPage (HobList.Raw);
-    BuildMemoryAllocationHob (0, EFI_PAGES_TO_SIZE (1), EfiBootServicesData);
-  }
+  // if (IsNullDetectionEnabled ()) {
+  //   ClearFirst4KPage (HobList.Raw);
+  //   BuildMemoryAllocationHob (0, EFI_PAGES_TO_SIZE (1), EfiBootServicesData);
+  // }
 
   //
   // Allocate 128KB for the Stack
@@ -68,24 +67,24 @@ HandOffToDxeCore (
   GhcbSize = 0;
 
   PageTables = 0;
-  if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
-    //
-    // Create page table and save PageMapLevel4 to CR3
-    //
-    PageTables = CreateIdentityMappingPageTables (
-                   (EFI_PHYSICAL_ADDRESS)(UINTN)BaseOfStack,
-                   STACK_SIZE,
-                   (EFI_PHYSICAL_ADDRESS)(UINTN)GhcbBase,
-                   GhcbSize
-                   );
-  } else {
-    //
-    // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
-    // for the DxeIpl and the DxeCore are both X64.
-    //
-    ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
-    ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
-  }
+  // if (FeaturePcdGet (PcdDxeIplBuildPageTables)) {
+  //   //
+  //   // Create page table and save PageMapLevel4 to CR3
+  //   //
+  //   PageTables = CreateIdentityMappingPageTables (
+  //                  (EFI_PHYSICAL_ADDRESS)(UINTN)BaseOfStack,
+  //                  STACK_SIZE,
+  //                  (EFI_PHYSICAL_ADDRESS)(UINTN)GhcbBase,
+  //                  GhcbSize
+  //                  );
+  // } else {
+  //   //
+  //   // Set NX for stack feature also require PcdDxeIplBuildPageTables be TRUE
+  //   // for the DxeIpl and the DxeCore are both X64.
+  //   //
+  //   ASSERT (PcdGetBool (PcdSetNxForStack) == FALSE);
+  //   ASSERT (PcdGetBool (PcdCpuStackGuard) == FALSE);
+  // }
 
   // CALEB: maybe do something here??
 

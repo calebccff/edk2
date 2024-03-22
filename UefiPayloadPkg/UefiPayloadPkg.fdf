@@ -161,12 +161,17 @@ INF CryptoPkg/Driver/CryptoDxe.inf
 !if $(SECURITY_STUB_ENABLE) == TRUE
 INF MdeModulePkg/Universal/SecurityStubDxe/SecurityStubDxe.inf
 !endif
+!if $(ARCH) == "AARCH64"
+INF ArmPkg/Drivers/CpuDxe/CpuDxe.inf
+INF ArmPkg/Drivers/ArmGic/ArmGicDxe.inf
+INF ArmPkg/Drivers/TimerDxe/TimerDxe.inf
+!else
 INF UefiCpuPkg/CpuDxe/CpuDxe.inf
-
 !if $(TIMER_SUPPORT) == "HPET"
 INF PcAtChipsetPkg/HpetTimerDxe/HpetTimerDxe.inf
 !elseif $(TIMER_SUPPORT) == "LAPIC"
 INF OvmfPkg/LocalApicTimerDxe/LocalApicTimerDxe.inf
+!endif
 !endif
 INF MdeModulePkg/Universal/Metronome/Metronome.inf
 INF MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
@@ -174,12 +179,14 @@ INF MdeModulePkg/Core/RuntimeDxe/RuntimeDxe.inf
 INF MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe.inf
 INF MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf
 
+!if $(ARCH) == "X64"
 !if $(DISABLE_RESET_SYSTEM) == FALSE
 INF MdeModulePkg/Universal/ResetSystemRuntimeDxe/ResetSystemRuntimeDxe.inf
 !endif
 INF PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe.inf
 !if $(PERFORMANCE_MEASUREMENT_ENABLE)
   INF MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableDxe/FirmwarePerformanceDxe.inf
+!endif
 !endif
 
 #
@@ -208,7 +215,9 @@ INF PcAtChipsetPkg/PcatRealTimeClockRuntimeDxe/PcatRealTimeClockRuntimeDxe.inf
   INF MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmmRuntimeDxe.inf
 !endif
 
+!if $(ARCH) == "X64"
 INF UefiCpuPkg/CpuIo2Dxe/CpuIo2Dxe.inf
+!endif
 INF MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
 !if $(MEMORY_TEST) == "GENERIC"
 INF  MdeModulePkg/Universal/MemoryTest/GenericMemoryTestDxe/GenericMemoryTestDxe.inf
@@ -227,6 +236,7 @@ INF MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
 INF MdeModulePkg/Logo/LogoDxe.inf
 !endif
 
+!if $(ARCH) == "X64"
 #
 # PCI Support
 #
@@ -300,6 +310,7 @@ INF MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
 INF MdeModulePkg/Bus/Usb/UsbKbDxe/UsbKbDxe.inf
 INF MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
 INF MdeModulePkg/Bus/Usb/UsbMouseDxe/UsbMouseDxe.inf
+!endif
 
 #
 # ACPI Support
@@ -326,7 +337,9 @@ INF MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
 # Shell
 #
 !if $(SHELL_TYPE) == BUILD_SHELL
+!if $(ARCH) == "X64"
 INF ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf
+!endif
 !if $(PERFORMANCE_MEASUREMENT_ENABLE) == TRUE
 INF ShellPkg/DynamicCommand/DpDynamicCommand/DpDynamicCommand.inf
 !endif

@@ -19,10 +19,10 @@
   PLATFORM_GUID                       = F71608AB-D63D-4491-B744-A99998C8CD96
   PLATFORM_VERSION                    = 0.1
   DSC_SPECIFICATION                   = 0x00010005
-  SUPPORTED_ARCHITECTURES             = IA32|X64
+  SUPPORTED_ARCHITECTURES             = IA32|X64|AARCH64
   BUILD_TARGETS                       = DEBUG|RELEASE|NOOPT
   SKUID_IDENTIFIER                    = DEFAULT
-  OUTPUT_DIRECTORY                    = Build/UefiPayloadPkg$(BUILD_ARCH)
+  OUTPUT_DIRECTORY                    = Build/UefiPayloadPkg$(ARCH)
   FLASH_DEFINITION                    = UefiPayloadPkg/UefiPayloadPkg.fdf
   PCD_DYNAMIC_AS_DYNAMICEX            = TRUE
 
@@ -196,7 +196,7 @@
   # Basic
   #
   BaseLib|MdePkg/Library/BaseLib/BaseLib.inf
-  BaseMemoryLib|MdePkg/Library/BaseMemoryLibRepStr/BaseMemoryLibRepStr.inf
+  BaseMemoryLib|MdePkg/Library/BaseMemoryLib/BaseMemoryLib.inf
   SynchronizationLib|MdePkg/Library/BaseSynchronizationLib/BaseSynchronizationLib.inf
   PrintLib|MdePkg/Library/BasePrintLib/BasePrintLib.inf
   CpuLib|MdePkg/Library/BaseCpuLib/BaseCpuLib.inf
@@ -337,6 +337,13 @@
   CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/DxeCpuExceptionHandlerLib.inf
   CpuPageTableLib|UefiCpuPkg/Library/CpuPageTableLib/CpuPageTableLib.inf
 
+[LibraryClasses.AARCH64]
+  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  TimerLib|ArmPkg/Library/ArmArchTimerLib/ArmArchTimerLib.inf
+  ArmGenericTimerCounterLib|ArmPkg/Library/ArmGenericTimerPhyCounterLib/ArmGenericTimerPhyCounterLib.inf
+  NULL|ArmPkg/Library/CompilerIntrinsicsLib/CompilerIntrinsicsLib.inf
+
+
 [LibraryClasses.common.SEC]
   HobLib|UefiPayloadPkg/Library/PayloadEntryHobLib/HobLib.inf
   PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
@@ -363,6 +370,26 @@
   PerformanceLib|MdeModulePkg/Library/DxeCorePerformanceLib/DxeCorePerformanceLib.inf
 !endif
 
+[LibraryClasses.AARCH64.DXE_CORE]
+  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
+  CpuExceptionHandlerLib|MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
+!if $(SOURCE_DEBUG_ENABLE)
+  DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/DxeDebugAgentLib.inf
+!endif
+!if $(PERFORMANCE_MEASUREMENT_ENABLE)
+  PerformanceLib|MdeModulePkg/Library/DxeCorePerformanceLib/DxeCorePerformanceLib.inf
+!endif
+
+[LibraryClasses.AARCH64.DXE_DRIVER]
+  ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  ArmGenericTimerCounterLib|ArmPkg/Library/ArmGenericTimerPhyCounterLib/ArmGenericTimerPhyCounterLib.inf
+  ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
+  DefaultExceptionHandlerLib|ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
+  ArmDisassemblerLib|ArmPkg/Library/ArmDisassemblerLib/ArmDisassemblerLib.inf
+  ArmGicLib|ArmPkg/Drivers/ArmGic/ArmGicLib.inf
+
+
 [LibraryClasses.common.DXE_DRIVER]
   PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
   MemoryAllocationLib|MdePkg/Library/UefiMemoryAllocationLib/UefiMemoryAllocationLib.inf
@@ -375,7 +402,6 @@
 !if $(SOURCE_DEBUG_ENABLE)
   DebugAgentLib|SourceLevelDebugPkg/Library/DebugAgent/DxeDebugAgentLib.inf
 !endif
-  CpuExceptionHandlerLib|UefiCpuPkg/Library/CpuExceptionHandlerLib/DxeCpuExceptionHandlerLib.inf
   MpInitLib|UefiCpuPkg/Library/MpInitLib/DxeMpInitLib.inf
 !if $(PERFORMANCE_MEASUREMENT_ENABLE)
   PerformanceLib|MdeModulePkg/Library/DxePerformanceLib/DxePerformanceLib.inf
@@ -617,6 +643,7 @@
   gUefiCpuPkgTokenSpaceGuid.PcdSevEsIsEnabled|0
   gEfiMdeModulePkgTokenSpaceGuid.PcdPciDisableBusEnumeration|TRUE
 
+[PcdsDynamicExDefault.X64]
   gPcAtChipsetPkgTokenSpaceGuid.PcdRtcIndexRegister|$(RTC_INDEX_REGISTER)
   gPcAtChipsetPkgTokenSpaceGuid.PcdRtcTargetRegister|$(RTC_TARGET_REGISTER)
 
@@ -639,7 +666,7 @@
   !else
     UefiPayloadPkg/UefiPayloadEntry/UefiPayloadEntry.inf
   !endif
-!else
+!elseif "X64" in "$(ARCH)"
   [Components.X64]
   !if $(UNIVERSAL_PAYLOAD) == TRUE
     !if $(UNIVERSAL_PAYLOAD_FORMAT) == "ELF"
@@ -652,6 +679,11 @@
   !else
     UefiPayloadPkg/UefiPayloadEntry/UefiPayloadEntry.inf
   !endif
+!elseif "AARCH64" in "$(ARCH)"
+  [Components.AARCH64]
+    UefiPayloadPkg/UefiPayloadEntry/UefiPayloadEntry.inf
+!else
+  !error "Invalid ARCH"
 !endif
 
 #
@@ -883,6 +915,205 @@
 !endif
 !endif
 
+[Components.AARCH64]
+  #
+  # DXE Core
+  #
+  MdeModulePkg/Core/Dxe/DxeMain.inf {
+    <LibraryClasses>
+      NULL|MdeModulePkg/Library/LzmaCustomDecompressLib/LzmaCustomDecompressLib.inf
+  }
+
+  MdeModulePkg/Universal/SecurityStubDxe/SecurityStubDxe.inf
+
+  #
+  # Components that produce the architectural protocols
+  #
+  ArmPkg/Drivers/CpuDxe/CpuDxe.inf {
+    <LibraryClasses>
+      ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+      ArmMmuLib|ArmPkg/Library/ArmMmuLib/ArmMmuBaseLib.inf
+      CpuExceptionHandlerLib|MdeModulePkg/Library/CpuExceptionHandlerLibNull/CpuExceptionHandlerLibNull.inf
+      DefaultExceptionHandlerLib|ArmPkg/Library/DefaultExceptionHandlerLib/DefaultExceptionHandlerLib.inf
+      ArmDisassemblerLib|ArmPkg/Library/ArmDisassemblerLib/ArmDisassemblerLib.inf
+  }
+  ArmPkg/Drivers/ArmGic/ArmGicDxe.inf {
+    <LibraryClasses>
+      ArmGicLib|ArmPkg/Drivers/ArmGic/ArmGicLib.inf
+      ArmGicArchLib|ArmPkg/Library/ArmGicArchLib/ArmGicArchLib.inf
+      ArmLib|ArmPkg/Library/ArmLib/ArmBaseLib.inf
+  }
+  MdeModulePkg/Universal/BdsDxe/BdsDxe.inf
+!if $(BOOTSPLASH_IMAGE)
+  MdeModulePkg/Logo/LogoDxe.inf
+!endif
+  MdeModulePkg/Application/UiApp/UiApp.inf {
+    <LibraryClasses>
+      NULL|MdeModulePkg/Library/DeviceManagerUiLib/DeviceManagerUiLib.inf
+      NULL|MdeModulePkg/Library/BootManagerUiLib/BootManagerUiLib.inf
+      NULL|MdeModulePkg/Library/BootMaintenanceManagerUiLib/BootMaintenanceManagerUiLib.inf
+  }
+  MdeModulePkg/Application/BootManagerMenuApp/BootManagerMenuApp.inf
+
+  ArmPkg/Drivers/TimerDxe/TimerDxe.inf
+
+  MdeModulePkg/Universal/Metronome/Metronome.inf
+  MdeModulePkg/Universal/WatchdogTimerDxe/WatchdogTimer.inf
+  MdeModulePkg/Core/RuntimeDxe/RuntimeDxe.inf
+  MdeModulePkg/Universal/CapsuleRuntimeDxe/CapsuleRuntimeDxe.inf
+  MdeModulePkg/Universal/MonotonicCounterRuntimeDxe/MonotonicCounterRuntimeDxe.inf
+  # MdeModulePkg/Universal/ResetSystemPei/ResetSystemPei.inf {
+  #   <LibraryClasses>
+  #     ResetSystemLib|ArmVirtPkg/Library/ArmVirtPsciResetSystemPeiLib/ArmVirtPsciResetSystemPeiLib.inf
+  # }
+  #
+  # Following are the DXE drivers
+  #
+  MdeModulePkg/Universal/PCD/Dxe/Pcd.inf {
+    <LibraryClasses>
+      PcdLib|MdePkg/Library/BasePcdLibNull/BasePcdLibNull.inf
+  }
+
+  MdeModulePkg/Universal/ReportStatusCodeRouter/RuntimeDxe/ReportStatusCodeRouterRuntimeDxe.inf
+  MdeModulePkg/Universal/StatusCodeHandler/RuntimeDxe/StatusCodeHandlerRuntimeDxe.inf
+  UefiCpuPkg/CpuMmio2Dxe/CpuMmio2Dxe.inf
+  MdeModulePkg/Universal/DevicePathDxe/DevicePathDxe.inf
+!if $(MEMORY_TEST) == "GENERIC"
+  MdeModulePkg/Universal/MemoryTest/GenericMemoryTestDxe/GenericMemoryTestDxe.inf
+!elseif $(MEMORY_TEST) == "NULL"
+  MdeModulePkg/Universal/MemoryTest/NullMemoryTestDxe/NullMemoryTestDxe.inf
+!endif
+  MdeModulePkg/Universal/HiiDatabaseDxe/HiiDatabaseDxe.inf
+  MdeModulePkg/Universal/SetupBrowserDxe/SetupBrowserDxe.inf
+  MdeModulePkg/Universal/DisplayEngineDxe/DisplayEngineDxe.inf
+  MdeModulePkg/Universal/PlatformDriOverrideDxe/PlatformDriOverrideDxe.inf
+  MdeModulePkg/Universal/EbcDxe/EbcDxe.inf
+
+  UefiPayloadPkg/BlSupportDxe/BlSupportDxe.inf
+
+  #
+  # SMBIOS Support
+  #
+  MdeModulePkg/Universal/SmbiosDxe/SmbiosDxe.inf
+
+  #
+  # ACPI Support
+  #
+  MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe.inf
+!if $(BOOTSPLASH_IMAGE)
+  MdeModulePkg/Universal/Acpi/AcpiPlatformDxe/AcpiPlatformDxe.inf
+  MdeModulePkg/Universal/Acpi/BootGraphicsResourceTableDxe/BootGraphicsResourceTableDxe.inf
+!endif
+
+  #
+  # PCI Support
+  #
+#   MdeModulePkg/Bus/Pci/PciBusDxe/PciBusDxe.inf
+#   MdeModulePkg/Bus/Pci/PciHostBridgeDxe/PciHostBridgeDxe.inf {
+#     <LibraryClasses>
+#       PciHostBridgeLib|UefiPayloadPkg/Library/PciHostBridgeLib/PciHostBridgeLib.inf
+#   }
+
+#   #
+#   # SCSI/ATA/IDE/DISK Support
+#   #
+#   MdeModulePkg/Universal/Disk/DiskIoDxe/DiskIoDxe.inf
+#   MdeModulePkg/Universal/Disk/PartitionDxe/PartitionDxe.inf
+#   MdeModulePkg/Universal/Disk/UnicodeCollation/EnglishDxe/EnglishDxe.inf
+#   FatPkg/EnhancedFatDxe/Fat.inf
+# !if $(ATA_ENABLE) == TRUE
+#   MdeModulePkg/Bus/Pci/SataControllerDxe/SataControllerDxe.inf
+#   MdeModulePkg/Bus/Ata/AtaBusDxe/AtaBusDxe.inf
+# !endif
+#   MdeModulePkg/Bus/Ata/AtaAtapiPassThru/AtaAtapiPassThru.inf
+#   MdeModulePkg/Bus/Scsi/ScsiBusDxe/ScsiBusDxe.inf
+#   MdeModulePkg/Bus/Scsi/ScsiDiskDxe/ScsiDiskDxe.inf
+# !if $(NVME_ENABLE) == TRUE
+#   MdeModulePkg/Bus/Pci/NvmExpressDxe/NvmExpressDxe.inf
+# !endif
+
+# !if $(RAM_DISK_ENABLE) == TRUE
+#   MdeModulePkg/Universal/Disk/RamDiskDxe/RamDiskDxe.inf
+# !endif
+#   #
+#   # SD/eMMC Support
+#   #
+# !if $(SD_ENABLE) == TRUE
+#   MdeModulePkg/Bus/Pci/SdMmcPciHcDxe/SdMmcPciHcDxe.inf
+#   MdeModulePkg/Bus/Sd/EmmcDxe/EmmcDxe.inf
+#   MdeModulePkg/Bus/Sd/SdDxe/SdDxe.inf
+# !endif
+
+#   #
+#   # Usb Support
+#   #
+#   MdeModulePkg/Bus/Pci/UhciDxe/UhciDxe.inf
+#   MdeModulePkg/Bus/Pci/EhciDxe/EhciDxe.inf
+#   MdeModulePkg/Bus/Pci/XhciDxe/XhciDxe.inf
+#   MdeModulePkg/Bus/Usb/UsbBusDxe/UsbBusDxe.inf
+#   MdeModulePkg/Bus/Usb/UsbKbDxe/UsbKbDxe.inf
+#   MdeModulePkg/Bus/Usb/UsbMassStorageDxe/UsbMassStorageDxe.inf
+#   MdeModulePkg/Bus/Usb/UsbMouseDxe/UsbMouseDxe.inf
+
+#   #
+#   # ISA Support
+#   #
+# !if $(SERIAL_DRIVER_ENABLE) == TRUE
+#   MdeModulePkg/Universal/SerialDxe/SerialDxe.inf
+# !endif
+# !if $(SIO_BUS_ENABLE) == TRUE
+#   OvmfPkg/SioBusDxe/SioBusDxe.inf
+# !endif
+# !if $(PS2_KEYBOARD_ENABLE) == TRUE
+#   MdeModulePkg/Bus/Isa/Ps2KeyboardDxe/Ps2KeyboardDxe.inf
+# !endif
+# !if $(PS2_MOUSE_ENABLE) == TRUE
+#   MdeModulePkg/Bus/Isa/Ps2MouseDxe/Ps2MouseDxe.inf
+# !endif
+
+  #
+  # Console Support
+  #
+  MdeModulePkg/Universal/Console/ConPlatformDxe/ConPlatformDxe.inf
+  MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe.inf
+  MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsoleDxe.inf
+# !if $(DISABLE_SERIAL_TERMINAL) == FALSE
+#   MdeModulePkg/Universal/Console/TerminalDxe/TerminalDxe.inf
+# !endif
+  UefiPayloadPkg/GraphicsOutputDxe/GraphicsOutputDxe.inf
+!if $(PERFORMANCE_MEASUREMENT_ENABLE)
+  MdeModulePkg/Universal/Acpi/FirmwarePerformanceDataTableDxe/FirmwarePerformanceDxe.inf
+!endif
+
+!if $(VARIABLE_SUPPORT) == "EMU"
+  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableRuntimeDxe.inf
+!elseif $(VARIABLE_SUPPORT) == "SPI"
+  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmm.inf {
+    <LibraryClasses>
+      NULL|MdeModulePkg/Library/VarCheckUefiLib/VarCheckUefiLib.inf
+      NULL|MdeModulePkg/Library/VarCheckHiiLib/VarCheckHiiLib.inf
+      NULL|MdeModulePkg/Library/VarCheckPcdLib/VarCheckPcdLib.inf
+      NULL|MdeModulePkg/Library/VarCheckPolicyLib/VarCheckPolicyLib.inf
+  }
+
+  UefiPayloadPkg/FvbRuntimeDxe/FvbSmm.inf
+  MdeModulePkg/Universal/FaultTolerantWriteDxe/FaultTolerantWriteSmm.inf
+  MdeModulePkg/Universal/Variable/RuntimeDxe/VariableSmmRuntimeDxe.inf
+!endif
+
+  #
+  # Misc
+  #
+!if $(CRYPTO_PROTOCOL_SUPPORT) == TRUE
+!if $(CRYPTO_DRIVER_EXTERNAL_SUPPORT) == FALSE
+  CryptoPkg/Driver/CryptoDxe.inf {
+    <LibraryClasses>
+      BaseCryptLib|CryptoPkg/Library/BaseCryptLib/BaseCryptLib.inf
+      TlsLib|CryptoPkg/Library/TlsLib/TlsLib.inf
+  }
+!endif
+!endif
+
   #------------------------------
   #  Build the shell
   #------------------------------
@@ -900,6 +1131,60 @@
   !include NetworkPkg/NetworkLibs.dsc.inc
 
 [Components.X64]
+  ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf {
+    <PcdsFixedAtBuild>
+      ## This flag is used to control initialization of the shell library
+      #  This should be FALSE for compiling the dynamic command.
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
+  }
+!if $(PERFORMANCE_MEASUREMENT_ENABLE) == TRUE
+  ShellPkg/DynamicCommand/DpDynamicCommand/DpDynamicCommand.inf {
+    <PcdsFixedAtBuild>
+      ## This flag is used to control initialization of the shell library
+      #  This should be FALSE for compiling the dynamic command.
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
+  }
+!endif
+  ShellPkg/Application/Shell/Shell.inf {
+    <PcdsFixedAtBuild>
+      ## This flag is used to control initialization of the shell library
+      #  This should be FALSE for compiling the shell application itself only.
+      gEfiShellPkgTokenSpaceGuid.PcdShellLibAutoInitialize|FALSE
+
+    #------------------------------
+    #  Basic commands
+    #------------------------------
+
+    <LibraryClasses>
+      NULL|ShellPkg/Library/UefiShellLevel1CommandsLib/UefiShellLevel1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellLevel2CommandsLib/UefiShellLevel2CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellLevel3CommandsLib/UefiShellLevel3CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellDriver1CommandsLib/UefiShellDriver1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellInstall1CommandsLib/UefiShellInstall1CommandsLib.inf
+      NULL|ShellPkg/Library/UefiShellDebug1CommandsLib/UefiShellDebug1CommandsLib.inf
+
+    #------------------------------
+    #  Networking commands
+    #------------------------------
+
+    <LibraryClasses>
+      NULL|ShellPkg/Library/UefiShellNetwork1CommandsLib/UefiShellNetwork1CommandsLib.inf
+
+    #------------------------------
+    #  Support libraries
+    #------------------------------
+
+    <LibraryClasses>
+      DevicePathLib|MdePkg/Library/UefiDevicePathLib/UefiDevicePathLib.inf
+      HandleParsingLib|ShellPkg/Library/UefiHandleParsingLib/UefiHandleParsingLib.inf
+      OrderedCollectionLib|MdePkg/Library/BaseOrderedCollectionRedBlackTreeLib/BaseOrderedCollectionRedBlackTreeLib.inf
+      PcdLib|MdePkg/Library/DxePcdLib/DxePcdLib.inf
+      ShellCEntryLib|ShellPkg/Library/UefiShellCEntryLib/UefiShellCEntryLib.inf
+      ShellCommandLib|ShellPkg/Library/UefiShellCommandLib/UefiShellCommandLib.inf
+      SortLib|MdeModulePkg/Library/UefiSortLib/UefiSortLib.inf
+  }
+
+  [Components.AARCH64]
   ShellPkg/DynamicCommand/TftpDynamicCommand/TftpDynamicCommand.inf {
     <PcdsFixedAtBuild>
       ## This flag is used to control initialization of the shell library
